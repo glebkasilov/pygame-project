@@ -2,9 +2,6 @@ import os
 import sys
 import pygame
 
-from scripts.utils import load_image
-from scripts.objects.player import Player
-
 
 # Constants
 FPS = 60
@@ -20,10 +17,6 @@ clock = pygame.time.Clock()
 # Global variables
 player = None
 
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-
 
 def terminate():
     pygame.quit()
@@ -31,12 +24,32 @@ def terminate():
 
 
 if __name__ == '__main__':
+    from scripts.objects.screens import start_screen
+    from scripts.objects.map import generate_level
+    from scripts.objects.map import load_level
+    from scripts.objects.objects import tiles_group
+    from scripts.objects.player import player_group
+
+    start_screen()
+    player, x, y = generate_level(load_level('main_level.txt'))
+
     running = True
     while running:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+        keys = pygame.key.get_pressed()
+
+        direction = {
+            'left': keys[pygame.K_LEFT] or keys[pygame.K_a],
+            'right': keys[pygame.K_RIGHT] or keys[pygame.K_d],
+            'up': keys[pygame.K_UP] or keys[pygame.K_w],
+            'down': keys[pygame.K_DOWN] or keys[pygame.K_s]
+        }
+
+        player.move_self(direction)
 
         screen.fill(pygame.Color(0, 0, 0))
         tiles_group.draw(screen)
