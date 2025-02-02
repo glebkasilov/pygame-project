@@ -1,3 +1,4 @@
+import pygame
 from scripts.objects.objects import Tile
 from scripts.objects.player import Player
 
@@ -18,11 +19,11 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
-                Tile('empty', x, y)
+                Tile('empty', x, y, "grount_group")
             elif level[y][x] == '#':
-                Tile('water', x, y)
+                Tile('water', x, y, "water_group")
             elif level[y][x] == '@':
-                Tile('empty', x, y)
+                Tile('empty', x, y, "grount_group")
                 new_player = Player(x, y)
 
     return new_player, x, y

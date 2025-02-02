@@ -2,6 +2,14 @@ import os
 
 import pygame
 
+all_sprites = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
+
+water_group = pygame.sprite.Group()
+grount_group = pygame.sprite.Group()
+
+resource_group = pygame.sprite.Group()
+
 
 def load_image(name, color_key=None):
     fullname = os.path.join('data', name)
