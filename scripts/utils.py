@@ -11,8 +11,8 @@ grount_group = pygame.sprite.Group()
 resource_group = pygame.sprite.Group()
 
 
-def load_image(name, color_key=None):
-    fullname = os.path.join('data', name)
+def load_image(name, type_data="", color_key=None, scale=None):
+    fullname = os.path.join('data', type_data, name)
 
     try:
         image = pygame.image.load(fullname).convert()
@@ -25,6 +25,9 @@ def load_image(name, color_key=None):
         if color_key == -1:
             color_key = image.get_at((0, 0))
         image.set_colorkey(color_key)
+
+    if scale is not None:
+        image = pygame.transform.scale(image, scale)
 
     else:
         image = image.convert_alpha()

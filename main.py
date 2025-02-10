@@ -58,16 +58,16 @@ if __name__ == '__main__':
 
         player.move_self(direction)
 
-        # screen.fill(pygame.Color(56, 152, 255))
+        screen.fill(pygame.Color(56, 152, 255))
         tiles_group.draw(screen)
 
         water_group.draw(screen)
         grount_group.draw(screen)
 
+        resource_group.draw(screen)
+
         player_group.draw(screen)
         player_group.update()
-
-        resource_group.draw(screen)
 
         camera.update(player)
 
