@@ -9,6 +9,7 @@ water_group = pygame.sprite.Group()
 grount_group = pygame.sprite.Group()
 
 resource_group = pygame.sprite.Group()
+resource_bars_group = pygame.sprite.Group()
 
 
 def load_image(name, type_data="", color_key=None, scale=None):

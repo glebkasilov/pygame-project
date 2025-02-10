@@ -27,8 +27,8 @@ if __name__ == '__main__':
     from scripts.objects.screens import start_screen
     from scripts.objects.map import generate_level
     from scripts.objects.map import load_level
-    from scripts.utils import tiles_group, all_sprites, grount_group, water_group, resource_group
-    from scripts.objects.objects import generate_Resource
+    from scripts.utils import tiles_group, all_sprites, grount_group, water_group, resource_group, resource_bars_group
+    from scripts.objects.objects import generate_resource
     from scripts.objects.player import player_group
     from scripts.objects.camera import Camera
 
@@ -39,13 +39,15 @@ if __name__ == '__main__':
     while running:
         while len(resource_group) < 10:
             # print(len(resource_group))
-            generate_Resource()
+            generate_resource()
 
         camera = Camera()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                player.hit()
 
         keys = pygame.key.get_pressed()
 
@@ -65,6 +67,9 @@ if __name__ == '__main__':
         grount_group.draw(screen)
 
         resource_group.draw(screen)
+        resource_group.update()
+        
+        resource_bars_group.draw(screen)
 
         player_group.draw(screen)
         player_group.update()

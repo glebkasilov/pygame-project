@@ -118,13 +118,12 @@ class Player(AnimatedSprite):
             "gold": 0,
             "wood": 0,
             "stone": 0,
-            "iron": 0
+            "iron": 0,
+            "strawberry": 0
         }
 
     def update(self):
         super().update()
-
-        print(self.inventory)
 
         if not self.is_alive:
             self.kill()
@@ -193,7 +192,13 @@ class Player(AnimatedSprite):
             self.pos_y = 0.0
 
     def hit(self):
-        pass
+        print("hit")
+
+        for sprite in resource_group:
+            if pygame.sprite.collide_rect(self, sprite):
+                obj, count = sprite.damage()
+                if obj is not None:
+                    self.add_item(obj, count)
 
     def damaged(self):
         self.health -= 1
@@ -217,17 +222,18 @@ class Player(AnimatedSprite):
 
     def add_item(self, item, count):
         self.inventory[item] += count
+        print(self.inventory)
 
 
 def can_move_point(x_now, y_now, direction) -> bool:
     if direction == 'left':
         for tile in water_group:
             # or tile.point_in_tile(x_now - 4, y_now - 5) or tile.point_in_tile(x_now - 4, y_now + 5):
-            if tile.point_in_tile(x_now - 6, y_now):
+            if tile.point_in_tile(x_now, y_now):
                 return False
         for tile in resource_group:
             # or tile.point_in_tile(x_now - 4, y_now - 5) or tile.point_in_tile(x_now - 4, y_now + 5):
-            if tile.point_in_tile(x_now - 6, y_now):
+            if tile.point_in_tile(x_now, y_now):
                 return False
 
     if direction == 'right':
@@ -244,11 +250,11 @@ def can_move_point(x_now, y_now, direction) -> bool:
     if direction == 'up':
         for tile in water_group:
             # or tile.point_in_tile(x_now - 5, y_now - 4) or tile.point_in_tile(x_now + 5, y_now - 4):
-            if tile.point_in_tile(x_now, y_now - 4):
+            if tile.point_in_tile(x_now, y_now - 2):
                 return False
         for tile in resource_group:
             # or tile.point_in_tile(x_now - 5, y_now - 4) or tile.point_in_tile(x_now + 5, y_now - 4):
-            if tile.point_in_tile(x_now, y_now - 4):
+            if tile.point_in_tile(x_now, y_now - 2):
                 return False
 
     if direction == 'down':

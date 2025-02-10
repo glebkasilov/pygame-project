@@ -3,7 +3,14 @@ import random
 
 from scripts.utils import load_image
 from scripts.objects.player import Player
-from scripts.utils import all_sprites, tiles_group, grount_group, water_group, resource_group
+from scripts.utils import (
+    all_sprites,
+    tiles_group,
+    grount_group,
+    water_group,
+    resource_group,
+    resource_bars_group
+)
 
 tile_width = tile_height = 75
 
@@ -27,7 +34,7 @@ GREEN = (0, 255, 0)
 
 class HealthBar(pygame.sprite.Sprite):
     def __init__(self, max_health, width, height, offset):
-        super().__init__(resource_group, all_sprites)
+        super().__init__(resource_bars_group, all_sprites)
         self.max_health = max_health
         self.current_health = max_health
         self.width = width
@@ -38,24 +45,26 @@ class HealthBar(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self, parent_sprite):
-        # if self.current_health < self.max_health:
-        self.rect.midtop = (
-            parent_sprite.rect.centerx,
-            parent_sprite.rect.top - self.offset[1]
-        )
+        if self.current_health != self.max_health:
+            self.rect.midtop = (
+                parent_sprite.rect.centerx,
+                parent_sprite.rect.top - self.offset[1]
+            )
 
-        health_ratio = self.current_health / self.max_health
+            health_ratio = self.current_health / self.max_health
 
-        new_width = int(self.width * health_ratio)
+            new_width = int(self.width * health_ratio)
 
-        self.image = pygame.Surface([new_width, self.height])
-        self.image.fill(GREEN)
+            self.image = pygame.Surface([new_width, self.height])
+            self.image.fill(GREEN)
 
-        pygame.draw.rect(self.image, BLACK,
-                         (0, 0, self.width, self.height), 1)
+            pygame.draw.rect(self.image, BLACK,
+                             (0, 0, self.width, self.height), 1)
 
-        if self.current_health <= 0:
-            parent_sprite.kill()
+            if self.current_health <= 0:
+                parent_sprite.kill()
+        else:
+            self.image.set_alpha(0)
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -113,17 +122,10 @@ class Recourse(pygame.sprite.Sprite):
         self.image = load_image(
             f'block_{type_resource}.png', type_data="block", color_key=-1, scale=(64, 64) if type_resource != "strawberry" else (46, 40)
         )
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x,
-            tile_height * pos_y
-        )
 
-        self.x = self.rect.x
-        self.y = self.rect.y
-
-    def move(self, dx, dy):
-        self.rect.x += dx
-        self.rect.y += dy
+        self.rect = self.image.get_rect()
+        self.rect.x = tile_width * pos_x
+        self.rect.y = tile_height * pos_y
 
         self.x = self.rect.x
         self.y = self.rect.y
@@ -135,7 +137,7 @@ class Recourse(pygame.sprite.Sprite):
         super().kill()
         all_sprites.remove(self)
         resource_group.remove(self)
-        mass_resources[self.type_resource].remove((self.x, self.y))
+        # mass_resources[self.type_resource].remove((self.x, self.y))
 
     def create_health_bar(self, health=1):
         health_bar = HealthBar(
@@ -151,14 +153,6 @@ class Recourse(pygame.sprite.Sprite):
 class Tree(Recourse):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, 'tree')
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x + self.image.get_width() // 2,
-            tile_height * pos_y + self.image.get_height() // 2
-        )
-
-        self.x = self.rect.x
-        self.y = self.rect.y
-
         self.max_health = 4
 
         self.health = 4
@@ -166,55 +160,42 @@ class Tree(Recourse):
         resource_group.add(self)
         self.health_bar = self.create_health_bar(self.health)
 
-    def damage(self):
-        self.health -= 1
+    def update(self):
+        self.health_bar.update(self)
 
-        if self.health < self.max_health:
-            self.health_bar = self.create_health_bar()
+    def damage(self, damage=1) -> tuple[str | None, int | None]:
+        self.health -= damage
 
         self.health_bar.current_health -= 1
         self.health_bar.update(self)
 
-        if self.health == 0:
-            Player.inventory['wood'] += random.randint(1, 3)
+        if self.health <= 0:
             self.kill()
+            return "wood", random.randint(1, 3)
 
-        return self.health
+        return None, None 
 
 
 class Strawberry(Recourse):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, 'strawberry')
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x + self.image.get_width() // 2,
-            tile_height * pos_y + self.image.get_height() // 2
-        )
-
-        self.x = self.rect.x
-        self.y = self.rect.y
+        self.health = 1
 
         resource_group.add(self)
 
-    def damage(self):
-        self.health -= 1
+    def damage(self, damage=1) -> tuple[str | None, int | None]:
+        self.health -= damage
 
         if self.health <= 0:
-            Player.inventory['strawberry'] += random.randint(1, 3)
             self.kill()
+            return "strawberry", random.randint(1, 3)
 
-        return self.health
+        return None, None
 
 
 class Gold(Recourse):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, 'gold')
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x + self.image.get_width() // 2,
-            tile_height * pos_y + self.image.get_height() // 2
-        )
-
-        self.x = self.rect.x
-        self.y = self.rect.y
 
         self.health = 6
 
@@ -222,29 +203,25 @@ class Gold(Recourse):
 
         self.health_bar = self.create_health_bar(self.health)
 
-    def damage(self):
-        self.health -= 1
+    def update(self):
+        self.health_bar.update(self)
 
-        if self.health <= 0:
-            Player.inventory['gold'] += random.randint(1, 3)
-            self.kill()
+    def damage(self, damage=1) -> tuple[str | None, int | None]:
+        self.health -= damage
 
         self.health_bar.current_health -= 1
         self.health_bar.update(self)
 
-        return self.health
+        if self.health <= 0:
+            self.kill()
+            return "gold", random.randint(1, 3)
+
+        return None, None 
 
 
 class Iron(Recourse):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, 'iron')
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x + self.image.get_width() // 2,
-            tile_height * pos_y + self.image.get_height() // 2
-        )
-
-        self.x = self.rect.x
-        self.y = self.rect.y
 
         self.health = 5
 
@@ -252,55 +229,51 @@ class Iron(Recourse):
 
         self.health_bar = self.create_health_bar(self.health)
 
-        for i in range(self.health):
-            self.damage()
+    def update(self):
+        self.health_bar.update(self)
 
-    def damage(self):
-        self.health -= 1
-
-        if self.health <= 0:
-            Player.inventory['iron'] += random.randint(1, 3)
-            self.kill()
+    def damage(self, damage=1) -> tuple[str | None, int | None]:
+        self.health -= damage
 
         self.health_bar.current_health -= 1
         self.health_bar.update(self)
 
-        return self.health
+        if self.health <= 0:
+            self.kill()
+            return "iron", random.randint(1, 3)
+
+        return None, None 
 
 
 class Stone(Recourse):
     def __init__(self, pos_x, pos_y):
         super().__init__(pos_x, pos_y, 'stone')
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x + self.image.get_width() // 2,
-            tile_height * pos_y + self.image.get_height() // 2
-        )
-
-        self.x = self.rect.x
-        self.y = self.rect.y
 
         self.health = 4
 
         resource_group.add(self)
 
         self.health_bar = self.create_health_bar(self.health)
+    
+    def update(self):
+        self.health_bar.update(self)
 
-    def damage(self):
-        self.health -= 1
-
-        if self.health <= 0:
-            Player.inventory['stone'] += random.randint(1, 3)
-            self.kill()
+    def damage(self, damage=1) -> tuple[str | None, int | None]:
+        self.health -= damage
 
         self.health_bar.current_health -= 1
         self.health_bar.update(self)
 
-        return self.health
+        if self.health <= 0:
+            self.kill()
+            return "stone", random.randint(1, 3)
+
+        return None, None 
 
 
-def generate_Resource():
+def generate_resource():
     with open('levels/main_level.txt', 'r') as f:
-        mapa = f.readlines()
+        mapa = [el.rstrip("\n") for el in f.readlines()]
 
     item = ['gold', 'stone', 'iron', 'tree',
             'strawberry'][random.randint(0, 4)]
@@ -309,13 +282,12 @@ def generate_Resource():
     for i in mass_resources.values():
         mass_values += i
 
-    while True:
+    x = random.randint(0, len(mapa[0]) - 1)
+    y = random.randint(0, len(mapa) - 1)
+
+    while any((((x, y) in mass_values), (mapa[y][x] == '#'), (mapa[y][x] == '@'))):
         x = random.randint(0, len(mapa[0]) - 1)
         y = random.randint(0, len(mapa) - 1)
-
-        if (x, y) in mass_values or mapa[y][x] == '#' or mapa[y][x] == '@':
-            continue
-        break
 
     mass_resources[item].append((x, y))
 
