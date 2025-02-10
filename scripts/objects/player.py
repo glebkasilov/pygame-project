@@ -124,6 +124,8 @@ class Player(AnimatedSprite):
     def update(self):
         super().update()
 
+        print(self.inventory)
+
         if not self.is_alive:
             self.kill()
 
@@ -212,6 +214,9 @@ class Player(AnimatedSprite):
     def move_center(self):
         self.x = 800 / 2
         self.y = 600 / 2
+
+    def add_item(self, item, count):
+        self.inventory[item] += count
 
 
 def can_move_point(x_now, y_now, direction) -> bool:

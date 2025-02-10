@@ -33,3 +33,18 @@ def load_image(name, type_data="", color_key=None, scale=None):
         image = image.convert_alpha()
 
     return image
+
+
+class RectSprite(pygame.sprite.Sprite):
+    def __init__(self, rect, color):
+        super().__init__()
+        self.image = pygame.Surface([rect.width, rect.height])
+        self.image.fill(color)
+        self.rect = rect
+
+
+my_rect = pygame.Rect(100, 100, 500, 500)
+rect_sprite = RectSprite(my_rect, (255, 0, 0))
+
+sprite_group = pygame.sprite.Group()
+sprite_group.add(rect_sprite)
