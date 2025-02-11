@@ -120,7 +120,7 @@ class Recourse(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, type_resource):
         super().__init__(resource_group, all_sprites)
         self.image = load_image(
-            f'block_{type_resource}.png', type_data="block", color_key=-1, scale=(64, 64) if type_resource != "strawberry" else (46, 40)
+            f'block_{type_resource}.png', type_data="block", color_key=-1, scale=(64, 60) if type_resource != "strawberry" else (46, 40)
         )
 
         self.rect = self.image.get_rect()
@@ -173,7 +173,7 @@ class Tree(Recourse):
             self.kill()
             return "wood", random.randint(1, 3)
 
-        return None, None 
+        return None, None
 
 
 class Strawberry(Recourse):
@@ -214,9 +214,9 @@ class Gold(Recourse):
 
         if self.health <= 0:
             self.kill()
-            return "gold", random.randint(1, 3)
+            return "ore_gold", random.randint(1, 3)
 
-        return None, None 
+        return None, None
 
 
 class Iron(Recourse):
@@ -240,9 +240,9 @@ class Iron(Recourse):
 
         if self.health <= 0:
             self.kill()
-            return "iron", random.randint(1, 3)
+            return "ore_iron", random.randint(1, 3)
 
-        return None, None 
+        return None, None
 
 
 class Stone(Recourse):
@@ -254,7 +254,7 @@ class Stone(Recourse):
         resource_group.add(self)
 
         self.health_bar = self.create_health_bar(self.health)
-    
+
     def update(self):
         self.health_bar.update(self)
 
@@ -266,9 +266,9 @@ class Stone(Recourse):
 
         if self.health <= 0:
             self.kill()
-            return "stone", random.randint(1, 3)
+            return "ore_stone", random.randint(1, 3)
 
-        return None, None 
+        return None, None
 
 
 def generate_resource():

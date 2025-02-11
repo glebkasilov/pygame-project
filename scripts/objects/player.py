@@ -1,12 +1,30 @@
 import pygame
-import time
 
-from scripts.utils import all_sprites, water_group, resource_group
+from scripts.utils import (
+    all_sprites,
+    water_group,
+    resource_group,
+    exp_bar_group,
+    inventory_group
+)
 from scripts.utils import load_image
 
 PLAYER_MAX_SPEED = 4.5
 FRICTION = 0.85
 ACCELERATION = 0.5
+
+BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)
+BG_COLOR = (50, 50, 50)
+BORDER_COLOR = (100, 100, 100)
+TEXT_COLOR = (255, 255, 255)
+
+
+INVENTORY_WIDTH = 4
+INVENTORY_HEIGHT = 3
+CELL_SIZE = 40
+PADDING = 5
+ICON_SIZE = 32
 
 tile_width = tile_height = 50
 
@@ -15,6 +33,120 @@ player_heart_full = load_image('heart_full.png', color_key=-1)
 player_heart_empty = load_image('heart_empty.png', color_key=-1)
 
 player_group = pygame.sprite.Group()
+
+
+class Inventory(pygame.sprite.Sprite):
+    def __init__(self, screen_width, screen_height):
+        super().__init__(inventory_group)
+        self.inventory_dict = dict()
+        self.is_visible = False
+        self.items_positions = {
+            "wood": (0, 0),
+            "strawberry": (1, 0),
+            "ore_iron": (2, 0),
+            "ore_gold": (3, 0),
+            "ore_stone": (0, 1),
+            "ingot_iron": (1, 1),
+            "ingot_gold": (2, 1)
+        }
+
+        self.width = CELL_SIZE * INVENTORY_WIDTH + \
+            PADDING * (INVENTORY_WIDTH + 1)
+        self.height = CELL_SIZE * INVENTORY_HEIGHT + \
+            PADDING * (INVENTORY_HEIGHT + 1)
+
+        self.image = pygame.Surface(
+            (self.width, self.height))
+        self.rect = self.image.get_rect(
+            center=(screen_width // 2, screen_height // 2))
+
+        self.icons = {}
+
+        for name in self.items_positions.keys():
+            if name.startswith("ore"):
+                self.icons[name] = load_image(f"ore/{name}.png")
+            elif name.startswith("ingot"):
+                self.icons[name] = load_image(f"ingot/{name}.png")
+            else:
+                self.icons[name] = load_image(f"{name}.png")
+
+        self.font = pygame.font.Font(None, 20)
+
+    def update(self):
+        if self.is_visible:
+            self.image = pygame.Surface(
+                (self.width, self.height), pygame.SRCALPHA)
+
+            self.image.fill((0, 0, 0))
+
+            pygame.draw.rect(self.image, BG_COLOR,
+                             (0, 0, self.width, self.height))
+            pygame.draw.rect(self.image, BORDER_COLOR,
+                             (0, 0, self.width, self.height), 2)
+
+            for name, (x, y) in self.items_positions.items():
+                count = self.inventory_dict.get(name, 0)
+                if count > 0:
+                    pos_x = PADDING + x * (CELL_SIZE + PADDING)
+                    pos_y = PADDING + y * (CELL_SIZE + PADDING)
+
+                    self.image.blit(self.icons[name], (pos_x + 4, pos_y + 4))
+
+                    text = self.font.render(str(count), True, TEXT_COLOR)
+                    self.image.blit(
+                        text, (pos_x + CELL_SIZE - 15, pos_y + CELL_SIZE - 15))
+
+        else:
+            self.image.set_alpha(0)
+
+    def toggle_visibility(self):
+        self.is_visible = not self.is_visible
+
+    def add_item(self, item_type, amount=1):
+        if item_type in self.inventory_dict:
+            self.inventory_dict[item_type] += amount
+        else:
+            self.inventory_dict[item_type] = amount
+
+
+class ExpBar(pygame.sprite.Sprite):
+    def __init__(self, max_exp, width, height, offset):
+        super().__init__(exp_bar_group)
+        self.max_exp = max_exp
+        self.current_exp = 0
+        self.width = width
+        self.height = height
+        self.offset = offset
+        self.image = pygame.Surface([width, height])
+        self.image.fill(BLUE)
+        self.rect = self.image.get_rect()
+
+    def update(self, parent_sprite):
+        self.rect.midtop = self.offset
+
+        exp_ratio = self.current_exp / self.max_exp
+
+        new_width = int(self.width * exp_ratio)
+
+        self.image = pygame.Surface([self.width, self.height])
+        self.image_bar = pygame.Surface([new_width, self.height])
+        self.image_bar.fill(BLUE)
+
+        pygame.draw.rect(self.image, BLACK,
+                         (0, 0, self.width, self.height), 1)
+
+        self.image.blit(self.image_bar, (0, 0))
+
+    def add_exp(self, amount) -> 0 | 1:
+        self.current_exp += amount
+        if self.current_exp >= self.max_exp:
+            self.current_exp = 0
+
+            self.max_exp *= 1.5
+
+            return 1
+
+        return 0
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -114,13 +246,11 @@ class Player(AnimatedSprite):
         self.max_health = 3
         self.hearts = [Heart(i, 0) for i in range(self.health)]
 
-        self.inventory = {
-            "gold": 0,
-            "wood": 0,
-            "stone": 0,
-            "iron": 0,
-            "strawberry": 0
-        }
+        self.inventory = Inventory(800, 600)
+
+        self.experience = 0
+
+        self.exp_bar = ExpBar(10, 400, 20, (400, 20))
 
     def update(self):
         super().update()
@@ -192,13 +322,16 @@ class Player(AnimatedSprite):
             self.pos_y = 0.0
 
     def hit(self):
-        print("hit")
-
         for sprite in resource_group:
             if pygame.sprite.collide_rect(self, sprite):
                 obj, count = sprite.damage()
                 if obj is not None:
                     self.add_item(obj, count)
+                    self.experience += count
+                    new_level = self.exp_bar.add_exp(count)
+
+                    if new_level != 0:
+                        self.level_up()
 
     def damaged(self):
         self.health -= 1
@@ -221,8 +354,10 @@ class Player(AnimatedSprite):
         self.y = 600 / 2
 
     def add_item(self, item, count):
-        self.inventory[item] += count
-        print(self.inventory)
+        self.inventory.add_item(item, count)
+
+    def level_up(self):
+        pass
 
 
 def can_move_point(x_now, y_now, direction) -> bool:
