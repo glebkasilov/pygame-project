@@ -2,14 +2,15 @@ import pygame
 import random
 
 from scripts.utils import load_image
-from scripts.objects.player import Player
+from main import screen
 from scripts.utils import (
     all_sprites,
     tiles_group,
     grount_group,
     water_group,
     resource_group,
-    resource_bars_group
+    resource_bars_group,
+    stars_group
 )
 
 tile_width = tile_height = 75
@@ -269,6 +270,46 @@ class Stone(Recourse):
             return "ore_stone", random.randint(1, 3)
 
         return None, None
+
+
+class Particle(pygame.sprite.Sprite):
+    # сгенерируем частицы разного размера
+    fire = [load_image("star.png", color_key=-1) for _ in range(20)]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(stars_group, all_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [dx, dy]
+        # и свои координаты
+        self.rect.x, self.rect.y = pos
+
+        # гравитация будет одинаковой (значение константы)
+        self.gravity = 0.35
+
+    def update(self):
+        # применяем гравитационный эффект:
+        # движение с ускорением под действием гравитации
+        self.velocity[1] += self.gravity
+        # перемещаем частицу
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        # убиваем, если частица ушла за экран
+        if not self.rect.colliderect(screen.get_rect()):
+            self.kill()
+
+
+def create_particles(position):
+    # количество создаваемых частиц
+    particle_count = 60
+    # возможные скорости
+    numbers = range(-5, 6)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
 
 
 def generate_resource():

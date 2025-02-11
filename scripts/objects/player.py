@@ -1,6 +1,7 @@
 import json
 import pygame
 
+from scripts.objects.objects import create_particles
 from scripts.utils import (
     all_sprites,
     water_group,
@@ -408,7 +409,7 @@ class Player(AnimatedSprite):
             )
 
     def level_up(self):
-        pass
+        create_particles((self.rect.centerx, self.rect.centery - 200))
 
 
 def can_move_point(x_now, y_now, direction) -> bool:

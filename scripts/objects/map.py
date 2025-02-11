@@ -27,3 +27,18 @@ def generate_level(level):
                 new_player = Player(x, y)
 
     return new_player, x, y
+
+
+def update_level(player, level):
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if level[y][x] == '.':
+                Tile('empty', x, y, "grount_group")
+            elif level[y][x] == '#':
+                Tile('water', x, y, "water_group")
+            elif level[y][x] == '@':
+                Tile('empty', x, y, "grount_group")
+                player.rect.x = x
+                player.rect.y = y
+
+    return

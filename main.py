@@ -25,7 +25,7 @@ def terminate():
 
 if __name__ == '__main__':
     from scripts.objects.screens import start_screen, end_screen
-    from scripts.objects.map import generate_level
+    from scripts.objects.map import generate_level, update_level
     from scripts.objects.map import load_level
     from scripts.utils import (
         tiles_group,
@@ -35,7 +35,8 @@ if __name__ == '__main__':
         resource_group,
         resource_bars_group,
         exp_bar_group,
-        inventory_group
+        inventory_group,
+        stars_group
     )
     from scripts.objects.objects import generate_resource
     from scripts.objects.player import player_group
@@ -94,6 +95,9 @@ if __name__ == '__main__':
 
         inventory_group.draw(screen)
         inventory_group.update()
+
+        stars_group.draw(screen)
+        stars_group.update()
 
         camera.update(player)
 

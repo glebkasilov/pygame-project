@@ -14,6 +14,8 @@ resource_bars_group = pygame.sprite.Group()
 exp_bar_group = pygame.sprite.Group()
 inventory_group = pygame.sprite.Group()
 
+stars_group = pygame.sprite.Group()
+
 
 def load_image(name, type_data="", color_key=None, scale=None):
     fullname = os.path.join('data', type_data, name)
