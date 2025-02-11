@@ -278,18 +278,15 @@ def generate_resource():
     item = ['gold', 'stone', 'iron', 'tree',
             'strawberry'][random.randint(0, 4)]
 
-    mass_values = list()
-    for i in mass_resources.values():
-        mass_values += i
-
     x = random.randint(0, len(mapa[0]) - 1)
     y = random.randint(0, len(mapa) - 1)
 
-    while any((((x, y) in mass_values), (mapa[y][x] == '#'), (mapa[y][x] == '@'))):
+    while any((
+        (mapa[y][x] == '#'),
+        (mapa[y][x] == '@')
+    )) or regenerate_point(x, y):
         x = random.randint(0, len(mapa[0]) - 1)
         y = random.randint(0, len(mapa) - 1)
-
-    mass_resources[item].append((x, y))
 
     if item == 'gold':
         Gold(x, y)
@@ -301,3 +298,22 @@ def generate_resource():
         Tree(x, y)
     elif item == 'strawberry':
         Strawberry(x, y)
+
+
+def regenerate_point(x, y):
+    x = tile_width * x
+    y = tile_height * y
+    for x1 in [x, x + 30, x - 30]:
+        for y1 in [y, y + 30, y - 30]:
+            for tile in water_group:
+                if tile.rect.collidepoint(x1, y1):
+                    return True
+
+            for tile in resource_group:
+                if tile.rect.collidepoint(x1, y1):
+                    return True
+
+            if x1 > 700 or y1 > 600 or x1 < 50 or y1 < 0:
+                return True
+
+    return False

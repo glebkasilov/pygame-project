@@ -1,3 +1,4 @@
+import json
 import pygame
 
 from scripts.utils import (
@@ -38,7 +39,7 @@ player_group = pygame.sprite.Group()
 class Inventory(pygame.sprite.Sprite):
     def __init__(self, screen_width, screen_height):
         super().__init__(inventory_group)
-        self.inventory_dict = dict()
+        self.inventory_dict = self.load_inventory()
         self.is_visible = False
         self.items_positions = {
             "wood": (0, 0),
@@ -107,6 +108,15 @@ class Inventory(pygame.sprite.Sprite):
             self.inventory_dict[item_type] += amount
         else:
             self.inventory_dict[item_type] = amount
+
+        with open("data/player/inventory.json", "w") as f:
+            json.dump(self.inventory_dict, f, ensure_ascii=False, indent=4)
+
+    def load_inventory(self) -> dict:
+        with open("data/player/inventory.json", "r") as f:
+            data = json.load(f)
+
+        return data
 
 
 class ExpBar(pygame.sprite.Sprite):
@@ -242,15 +252,11 @@ class Player(AnimatedSprite):
         self.player_speed = 0.0
 
         self.is_alive = True
-        self.health = 3
-        self.max_health = 3
-        self.hearts = [Heart(i, 0) for i in range(self.health)]
-
-        self.inventory = Inventory(800, 600)
-
-        self.experience = 0
 
         self.exp_bar = ExpBar(10, 400, 20, (400, 20))
+        self.load_stats()
+
+        self.inventory = Inventory(800, 600)
 
     def update(self):
         super().update()
@@ -330,7 +336,11 @@ class Player(AnimatedSprite):
                     self.experience += count
                     new_level = self.exp_bar.add_exp(count)
 
+                    self.save_stats()
+
                     if new_level != 0:
+                        self.level += new_level
+                        self.save_stats()
                         self.level_up()
 
     def damaged(self):
@@ -339,6 +349,11 @@ class Player(AnimatedSprite):
 
         if self.health == 0:
             self.is_alive = False
+
+        if self.health >= 0:
+            self.health += 1
+
+        self.save_stats()
 
     def healed(self):
         if self.health <= self.max_health:
@@ -355,6 +370,42 @@ class Player(AnimatedSprite):
 
     def add_item(self, item, count):
         self.inventory.add_item(item, count)
+
+    def load_stats(self):
+        with open('data/player/stats.json', 'r') as f:
+            stats = json.load(f)
+        try:
+            self.health = stats['health']
+            self.max_health = stats['health_max']
+            self.hearts = [Heart(i, 0) for i in range(self.health)]
+
+            self.exp_bar.current_exp = stats['experience']
+            self.exp_bar.max_exp = stats['experience_max']
+
+            self.level = stats['level']
+            self.experience = stats['experience']
+        except:
+            self.health = 3
+            self.max_health = 3
+            self.hearts = [Heart(i, 0) for i in range(self.health)]
+
+            self.level = 1
+            self.experience = 0
+
+    def save_stats(self):
+        with open('data/player/stats.json', 'w') as f:
+            json.dump(
+                {
+                    'health': self.health,
+                    'health_max': self.max_health,
+                    'experience': self.exp_bar.current_exp,
+                    'experience_max': self.exp_bar.max_exp,
+                    'level': self.level
+                },
+
+                f, ensure_ascii=False,
+                indent=4
+            )
 
     def level_up(self):
         pass

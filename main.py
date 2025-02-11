@@ -24,7 +24,7 @@ def terminate():
 
 
 if __name__ == '__main__':
-    from scripts.objects.screens import start_screen
+    from scripts.objects.screens import start_screen, end_screen
     from scripts.objects.map import generate_level
     from scripts.objects.map import load_level
     from scripts.utils import (
@@ -59,6 +59,9 @@ if __name__ == '__main__':
                 player.hit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
                 player.inventory.toggle_visibility()
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                end_screen()
 
         keys = pygame.key.get_pressed()
 
