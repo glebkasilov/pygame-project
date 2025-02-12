@@ -1,5 +1,4 @@
-import pygame
-from scripts.objects.objects import Tile
+from scripts.objects.objects import Furnace, Tile
 from scripts.objects.player import Player
 
 
@@ -25,6 +24,9 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('empty', x, y, "grount_group")
                 new_player = Player(x, y)
+            elif level[y][x] == '+':
+                Tile('empty', x, y, "grount_group")
+                Furnace(x, y)
 
     return new_player, x, y
 
@@ -41,4 +43,4 @@ def update_level(player, level):
                 player.rect.x = x
                 player.rect.y = y
 
-    return
+    return None

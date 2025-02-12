@@ -7,7 +7,8 @@ from scripts.utils import (
     water_group,
     resource_group,
     exp_bar_group,
-    inventory_group
+    inventory_group,
+    forge_group
 )
 from scripts.utils import load_image
 
@@ -119,10 +120,14 @@ class Inventory(pygame.sprite.Sprite):
 
         return data
 
+    def update_inventory(self):
+        with open("data/player/inventory.json", "w") as f:
+            json.dump(self.inventory_dict, f, ensure_ascii=False, indent=4)
+
 
 class ExpBar(pygame.sprite.Sprite):
     def __init__(self, max_exp, width, height, offset):
-        super().__init__(exp_bar_group)
+        super().__init__(exp_bar_group, all_sprites)
         self.max_exp = max_exp
         self.current_exp = 0
         self.width = width
@@ -262,6 +267,8 @@ class Player(AnimatedSprite):
     def update(self):
         super().update()
 
+        self.inventory.update_inventory()
+
         if not self.is_alive:
             self.kill()
 
@@ -328,6 +335,15 @@ class Player(AnimatedSprite):
         if abs(self.pos_y) < 0.1:
             self.pos_y = 0.0
 
+    def stop_moving(self):
+        self.pos_x = 0.0
+        self.pos_y = 0.0
+
+        self.rect.x = int(self.x)
+        self.rect.y = int(self.y)
+
+        self.animation_default()
+
     def hit(self):
         for sprite in resource_group:
             if pygame.sprite.collide_rect(self, sprite):
@@ -343,6 +359,11 @@ class Player(AnimatedSprite):
                         self.level += new_level
                         self.save_stats()
                         self.level_up()
+
+    def active(self):
+        for sprite in forge_group:
+            if pygame.sprite.collide_rect(self, sprite):
+                sprite.active(self.inventory)
 
     def damaged(self):
         self.health -= 1
@@ -416,42 +437,57 @@ def can_move_point(x_now, y_now, direction) -> bool:
     if direction == 'left':
         for tile in water_group:
             # or tile.point_in_tile(x_now - 4, y_now - 5) or tile.point_in_tile(x_now - 4, y_now + 5):
-            if tile.point_in_tile(x_now, y_now):
+            if tile.point_in_tile(x_now - 1, y_now):
                 return False
         for tile in resource_group:
             # or tile.point_in_tile(x_now - 4, y_now - 5) or tile.point_in_tile(x_now - 4, y_now + 5):
-            if tile.point_in_tile(x_now, y_now):
+            if tile.point_in_tile(x_now - 1, y_now):
+                return False
+        for tile in forge_group:
+            # or tile.point_in_tile(x_now - 4, y_now - 5) or tile.point_in_tile(x_now - 4, y_now + 5):
+            if tile.point_in_tile(x_now + 10, y_now):
                 return False
 
     if direction == 'right':
         for tile in water_group:
             # or tile.point_in_tile(x_now + 4, y_now - 5) or tile.point_in_tile(x_now + 4, y_now + 5):
-            if tile.point_in_tile(x_now + 4, y_now):
+            if tile.point_in_tile(x_now + 16, y_now):
                 return False
-
         for tile in resource_group:
             # or tile.point_in_tile(x_now + 4, y_now - 5) or tile.point_in_tile(x_now + 4, y_now + 5):
-            if tile.point_in_tile(x_now + 4, y_now):
+            if tile.point_in_tile(x_now + 6, y_now):
+                return False
+        for tile in forge_group:
+            # or tile.point_in_tile(x_now + 4, y_now - 5) or tile.point_in_tile(x_now + 4, y_now + 5):
+            if tile.point_in_tile(x_now + 6, y_now):
                 return False
 
     if direction == 'up':
         for tile in water_group:
             # or tile.point_in_tile(x_now - 5, y_now - 4) or tile.point_in_tile(x_now + 5, y_now - 4):
-            if tile.point_in_tile(x_now, y_now - 2):
+            if tile.point_in_tile(x_now, y_now + 6):
                 return False
         for tile in resource_group:
             # or tile.point_in_tile(x_now - 5, y_now - 4) or tile.point_in_tile(x_now + 5, y_now - 4):
-            if tile.point_in_tile(x_now, y_now - 2):
+            if tile.point_in_tile(x_now, y_now + 8):
+                return False
+        for tile in forge_group:
+            # or tile.point_in_tile(x_now - 5, y_now - 4) or tile.point_in_tile(x_now + 5, y_now - 4):
+            if tile.point_in_tile(x_now, y_now + 10):
                 return False
 
     if direction == 'down':
         for tile in water_group:
             # or tile.point_in_tile(x_now - 5, y_now + 4) or tile.point_in_tile(x_now + 5, y_now + 4):
-            if tile.point_in_tile(x_now, y_now + 4):
+            if tile.point_in_tile(x_now, y_now + 14):
                 return False
         for tile in resource_group:
             # or tile.point_in_tile(x_now - 5, y_now + 4) or tile.point_in_tile(x_now + 5, y_now + 4):
-            if tile.point_in_tile(x_now, y_now + 4):
+            if tile.point_in_tile(x_now, y_now + 6):
+                return False
+        for tile in forge_group:
+            # or tile.point_in_tile(x_now - 5, y_now + 4) or tile.point_in_tile(x_now + 5, y_now + 4):
+            if tile.point_in_tile(x_now, y_now + 6):
                 return False
 
     return True

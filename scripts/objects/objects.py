@@ -10,7 +10,9 @@ from scripts.utils import (
     water_group,
     resource_group,
     resource_bars_group,
-    stars_group
+    stars_group,
+    forge_group,
+    furnace_interface_group
 )
 
 tile_width = tile_height = 75
@@ -31,6 +33,141 @@ tile_images = {
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BG_COLOR = (50, 50, 50)
+BORDER_COLOR = (100, 100, 100)
+TEXT_COLOR = (255, 255, 255)
+
+
+class FurnaceInterface(pygame.sprite.Sprite):
+    def __init__(self, screen_width, screen_height):
+        super().__init__(furnace_interface_group)
+        self.inventory = {}
+        self.is_visible = False
+        self.smelting_recipes = {
+            "ore_iron": ("ingot_iron", 1),
+            "ore_gold": ("ingot_gold", 1)
+        }
+
+        self.tick = 0
+
+        # Настройка размеров
+        self.width = 300
+        self.height = 200
+        self.button_width = 100
+        self.button_height = 40
+        self.padding = 20
+
+        # Создание поверхности
+        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(
+            center=(screen_width // 2, screen_height // 2))
+
+        # Загрузка текстур
+        self.icons = {
+            "ore_iron": load_image("ore/ore_iron.png"),
+            "ore_gold": load_image("ore/ore_gold.png"),
+            "ingot_iron": load_image("ingot/ingot_iron.png"),
+            "ingot_gold": load_image("ingot/ingot_gold.png")
+        }
+
+        # Шрифты
+        self.font = pygame.font.Font(None, 24)
+        self.button_font = pygame.font.Font(None, 22)
+
+        # Кнопки
+        self.buttons = []
+
+    def update(self):
+        self.buttons = []
+        if self.is_visible:
+            self.image = pygame.Surface(
+                (self.width, self.height), pygame.SRCALPHA)
+
+            self.image.fill((0, 0, 0,))
+
+            # Рисуем фон
+            pygame.draw.rect(self.image, BG_COLOR,
+                             (0, 0, self.width, self.height))
+            pygame.draw.rect(self.image, BORDER_COLOR,
+                             (0, 0, self.width, self.height), 2)
+
+            # Отрисовка рецептов и кнопок
+            y = self.padding
+            for i, (ore, (ingot, count)) in enumerate(self.smelting_recipes.items()):
+                self._draw_recipe(y, ore, ingot)
+                y += 60
+        else:
+            self.image.set_alpha(0)
+
+    def _draw_recipe(self, y_pos, ore, ingot):
+        # Иконки ресурсов
+        self.image.blit(self.icons[ore], (self.padding, y_pos))
+        self.image.blit(self.icons[ingot],
+                        (self.width - self.padding - 32, y_pos))
+
+        # Текст рецепта
+        text = self.font.render(f"3 {ore} -> 1 {ingot}", True, TEXT_COLOR)
+        text_rect = text.get_rect(center=(self.width//2, y_pos + 16))
+        self.image.blit(text, text_rect)
+
+        # Кнопка крафта
+        button_rect = pygame.Rect(
+            self.width//2 - self.button_width//2,
+            y_pos + 30,
+            self.button_width,
+            self.button_height
+        )
+
+        # Проверка доступности
+        can_craft = self.inventory.get(ore, 0) >= 3
+        button_color = (50, 150, 50) if can_craft else (100, 100, 100)
+
+        # Отрисовка кнопки
+        pygame.draw.rect(self.image, button_color,
+                         button_rect, border_radius=5)
+        pygame.draw.rect(self.image, BORDER_COLOR,
+                         button_rect, 2, border_radius=5)
+
+        # Текст кнопки
+        btn_text = self.button_font.render("Smelt", True, TEXT_COLOR)
+        text_rect = btn_text.get_rect(center=button_rect.center)
+        self.image.blit(btn_text, text_rect)
+
+        # Сохраняем кнопку для обработки кликов
+        self.buttons.append({
+            "rect": button_rect,
+            "ore": ore,
+            "ingot": ingot,
+            "active": can_craft
+        })
+
+    def handle_click(self, mouse_pos, mouse_pressed):
+        if not self.is_visible:
+            return
+
+        self.tick += 1
+
+        rel_pos = (mouse_pos[0] - self.rect.x, mouse_pos[1] - self.rect.y)
+
+        for button in self.buttons:
+            if button["rect"].collidepoint(rel_pos) and button["active"] and mouse_pressed and self.tick % 100 == 0:
+                self._smelt_item(button["ore"], button["ingot"])
+                mouse_pressed = False
+
+    def _smelt_item(self, ore, ingot):
+        if self.inventory.get(ore, 0) >= 3:
+            self.inventory[ore] -= 3
+            self.inventory[ingot] = self.inventory.get(ingot, 0) + 1
+
+            # Удаляем запись если количество 0
+            if self.inventory[ore] == 0:
+                del self.inventory[ore]
+
+    def toggle_visibility(self):
+        self.is_visible = not self.is_visible
+
+    def point_in_tile(self, x, y):
+        return False
 
 
 class HealthBar(pygame.sprite.Sprite):
@@ -301,6 +438,36 @@ class Particle(pygame.sprite.Sprite):
         # убиваем, если частица ушла за экран
         if not self.rect.colliderect(screen.get_rect()):
             self.kill()
+
+
+class Furnace(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(forge_group, all_sprites)
+        self.image = pygame.transform.scale(
+            load_image('furnace.png', color_key=-1),
+            (150, 150)
+        )
+        self.rect = self.image.get_rect()
+        self.rect.x = tile_width * pos_x
+        self.rect.y = tile_height * pos_y
+
+        self.x = self.rect.x
+        self.y = self.rect.y
+
+        self.furnace_interface = FurnaceInterface(self.rect.x, self.rect.y)
+
+    def active(self, inventory):
+        self.furnace_interface.inventory = inventory.inventory_dict
+        self.furnace_interface.toggle_visibility()
+        inventory.update_inventory()
+
+    def point_in_tile(self, x, y):
+        return self.rect.collidepoint(x, y)
+
+    def update(self):
+        if self.furnace_interface.is_visible:
+            self.furnace_interface.handle_click(
+                pygame.mouse.get_pos(), pygame.mouse.get_pressed())
 
 
 def create_particles(position):

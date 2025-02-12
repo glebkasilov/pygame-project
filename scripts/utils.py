@@ -16,6 +16,9 @@ inventory_group = pygame.sprite.Group()
 
 stars_group = pygame.sprite.Group()
 
+forge_group = pygame.sprite.Group()
+furnace_interface_group = pygame.sprite.Group()
+
 
 def load_image(name, type_data="", color_key=None, scale=None):
     fullname = os.path.join('data', type_data, name)
